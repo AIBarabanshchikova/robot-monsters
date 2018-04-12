@@ -5,10 +5,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Map;
@@ -16,6 +13,7 @@ import java.util.Stack;
 
 import javax.swing.*;
 
+import log.LogWindowSource;
 import log.Logger;
 
 /**
@@ -27,19 +25,19 @@ import log.Logger;
 public class MainApplicationFrame extends JFrame
 {
     private final JDesktopPane desktopPane = new JDesktopPane();
-    
+
     public MainApplicationFrame() {
         //Make the big window be indented 50 pixels from each edge
         //of the screen.
-        int inset = 50;        
+        int inset = 50;
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
         setBounds(inset, inset,
             screenSize.width  - inset*2,
             screenSize.height - inset*2);
 
         setContentPane(desktopPane);
-        
-        
+
+
 /*        LogWindow logWindow = createLogWindow();
         addWindow(logWindow);
 
@@ -76,35 +74,57 @@ public class MainApplicationFrame extends JFrame
 
             @Override
             public void windowOpened(WindowEvent e) {
-                try (BufferedReader br = new BufferedReader(new FileReader("out.txt"))) {
-                    //String[] values = br.readLine().split(" ");
+                try (BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\fyfcn\\Desktop\\Robots-master\\out.txt"))) {
                     String[] values;
-                    String[] values2;
                     String line;
                     while ((line = br.readLine()) != null) {
                         values = line.split(":");
                         if ( values[0].compareTo("Протокол работы") == 0) {
-                            values2 = values[1].split(" ");
-                            LogWindow logWindow = createLogWindow();
-                            logWindow.setLocation(Integer.parseInt(values2[0]), Integer.parseInt(values2[1]));
-                            logWindow.setSize(Integer.parseInt(values2[2]), Integer.parseInt(values2[3]));
-                            addWindow(logWindow);
+                            createWindow(LogWindow.class, values[1]);
+                        }
+                        else if( values[0].compareTo("Игровое поле") == 0){
+                            createWindow(GameWindow.class, values[1]);
                         }
                         else {
-                            values2 = values[1].split(" ");
-                            GameWindow gameWindow = new GameWindow();
-                            gameWindow.setLocation(Integer.parseInt(values2[0]), Integer.parseInt(values2[1]));
-                            gameWindow.setSize(Integer.parseInt(values2[2]), Integer.parseInt(values2[3]));
-                            addWindow(gameWindow);
+                            createWindow(CoordinatesWindow.class, values[1]);
                         }
                     }
-                } catch (IOException ex) {
+                } catch (FileNotFoundException ex) {
+                    CoordinatesWindow coordinatesWindow = createCoordinatesWindow();
+                    addWindow(coordinatesWindow);
+
+                    LogWindow logWindow = createLogWindow();
+                    addWindow(logWindow);
+
+                    GameWindow gameWindow = new GameWindow();
+                    gameWindow.setSize(400,  400);
+                    addWindow(gameWindow);
+                }
+                catch (IOException ex) {
                     ex.printStackTrace();
                 }
             }
         });
     }
-    
+    protected  JInternalFrame createWindow(Class<? extends JInternalFrame> windowType, String line) {
+        String[] values;
+        values = line.split(" ");
+        try {
+            JInternalFrame frame;
+            if (LogWindow.class == windowType)
+                frame = windowType.getDeclaredConstructor(LogWindowSource.class).newInstance(Logger.getDefaultLogSource());
+            else
+                frame = (JInternalFrame) windowType.newInstance();
+            frame.setLocation(Integer.parseInt(values[0]), Integer.parseInt(values[1]));
+            frame.setSize(Integer.parseInt(values[2]), Integer.parseInt(values[3]));
+            addWindow(frame);
+            return frame;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     protected LogWindow createLogWindow()
     {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
@@ -114,6 +134,15 @@ public class MainApplicationFrame extends JFrame
         logWindow.pack();
         Logger.debug("Протокол работает");
         return logWindow;
+    }
+
+    protected  CoordinatesWindow createCoordinatesWindow() {
+        CoordinatesWindow coordinatesWindow = new CoordinatesWindow();
+        coordinatesWindow.setLocation(10, 10);
+        coordinatesWindow.setSize(400, 700);
+        setMinimumSize(coordinatesWindow.getSize());
+        coordinatesWindow.pack();
+        return  coordinatesWindow;
     }
     
     protected void addWindow(JInternalFrame frame)
@@ -186,6 +215,9 @@ public class MainApplicationFrame extends JFrame
             this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         });
         addMenuItem(fileMenu, "Добавить окна", (event) -> {
+            CoordinatesWindow coordinatesWindow = createCoordinatesWindow();
+            addWindow(coordinatesWindow);
+
             LogWindow logWindow = createLogWindow();
             addWindow(logWindow);
 
@@ -194,9 +226,9 @@ public class MainApplicationFrame extends JFrame
             addWindow(gameWindow);
         });
 
+        menuBar.add(fileMenu);
         menuBar.add(lookAndFeelMenu);
         menuBar.add(testMenu);
-        
         return menuBar;
     }
 
