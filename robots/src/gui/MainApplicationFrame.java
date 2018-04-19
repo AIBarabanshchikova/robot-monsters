@@ -8,12 +8,9 @@ import java.awt.event.WindowEvent;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.Map;
-import java.util.Stack;
 
 import javax.swing.*;
 
-import log.LogWindowSource;
 import log.Logger;
 
 /**
@@ -49,6 +46,7 @@ public class MainApplicationFrame extends JFrame
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
         addWindowListener(new WindowAdapter() {
+            //метод выхода из приложения
             @Override
             public void windowClosing(WindowEvent e) {
                 UIManager.put("OptionPane.yesButtonText"   , "Да"    );
@@ -72,32 +70,60 @@ public class MainApplicationFrame extends JFrame
 
             }
 
+            //метод восстановления из файла положения окошек
             @Override
             public void windowOpened(WindowEvent e) {
                 try (BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\fyfcn\\Desktop\\Robots-master\\out.txt"))) {
                     String[] values;
                     String line;
+                    RobotModel robotModel = new RobotModel();
+                    boolean gameAttached = false, coordinatesAttached = false;
                     while ((line = br.readLine()) != null) {
                         values = line.split(":");
                         if ( values[0].compareTo("Протокол работы") == 0) {
-                            createWindow(LogWindow.class, values[1]);
+                            resizeWindow(createLogWindow(), values[1]);
                         }
                         else if( values[0].compareTo("Игровое поле") == 0){
-                            createWindow(GameWindow.class, values[1]);
+                            //если к игре не прикреплена модель, то прикрепляем и gameAttached меняем на true
+                            if (!gameAttached) {
+                                resizeWindow(createGameWindow(robotModel), values[1]);
+                                gameAttached = true;
+                            } else {
+                            //если gameAttached = true, то к какому-то окну с игрой модель уже прикреплена,
+                                // и мы создаём новую модель и присваиваем coordinatesAttached значени false
+                                robotModel = new RobotModel();
+                                resizeWindow(createGameWindow(robotModel), values[1]);
+                                coordinatesAttached = false;
+                            }
                         }
                         else {
-                            createWindow(CoordinatesWindow.class, values[1]);
+                            CoordinatesWindow coordinatesWindow = createCoordinatesWindow();
+                            //если окно с координатами на прикреплено к конкретному окну с игрой, то делаем это и меняем coordinatesAttached на true
+                            if (!coordinatesAttached) {
+                                robotModel.addObserver(coordinatesWindow);
+                                resizeWindow(coordinatesWindow, values[1]);
+                                coordinatesAttached = true;
+                            } else if (gameAttached){
+                            //если gameAttached = true и coordinatesAttached = true, то создаем новую модель, прикрепляем её и gameAttached = false
+                                robotModel = new RobotModel();
+                                robotModel.addObserver(coordinatesWindow);
+                                resizeWindow(coordinatesWindow, values[1]);
+                                gameAttached = false;
+                            }
                         }
                     }
-                } catch (FileNotFoundException ex) {
+                }
+                //если файл не найден, то создаём три стандартных окна
+                catch (FileNotFoundException ex) {
+                    RobotModel robotModel = new RobotModel();
                     CoordinatesWindow coordinatesWindow = createCoordinatesWindow();
+                    robotModel.addObserver(coordinatesWindow);
                     addWindow(coordinatesWindow);
 
                     LogWindow logWindow = createLogWindow();
                     addWindow(logWindow);
 
-                    GameWindow gameWindow = new GameWindow();
-                    gameWindow.setSize(400,  400);
+                    GameWindow gameWindow = createGameWindow(robotModel);
                     addWindow(gameWindow);
                 }
                 catch (IOException ex) {
@@ -106,25 +132,18 @@ public class MainApplicationFrame extends JFrame
             }
         });
     }
-    protected  JInternalFrame createWindow(Class<? extends JInternalFrame> windowType, String line) {
+
+    //метод, который переопределяет размеры окон
+    protected  JInternalFrame resizeWindow(JInternalFrame frame, String line) {
         String[] values;
         values = line.split(" ");
-        try {
-            JInternalFrame frame;
-            if (LogWindow.class == windowType)
-                frame = windowType.getDeclaredConstructor(LogWindowSource.class).newInstance(Logger.getDefaultLogSource());
-            else
-                frame = (JInternalFrame) windowType.newInstance();
-            frame.setLocation(Integer.parseInt(values[0]), Integer.parseInt(values[1]));
-            frame.setSize(Integer.parseInt(values[2]), Integer.parseInt(values[3]));
-            addWindow(frame);
-            return frame;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
+        frame.setLocation(Integer.parseInt(values[0]), Integer.parseInt(values[1]));
+        frame.setSize(Integer.parseInt(values[2]), Integer.parseInt(values[3]));
+        addWindow(frame);
+        return frame;
     }
 
+    //создаём окно с логом
     protected LogWindow createLogWindow()
     {
         LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
@@ -136,6 +155,14 @@ public class MainApplicationFrame extends JFrame
         return logWindow;
     }
 
+    //создаём окно с игрой
+    protected  GameWindow createGameWindow(RobotModel robotModel){
+        GameWindow gameWindow = new GameWindow(robotModel);
+        gameWindow.setSize(400,  400);
+        return  gameWindow;
+    }
+
+    //создаём окно с координатами
     protected  CoordinatesWindow createCoordinatesWindow() {
         CoordinatesWindow coordinatesWindow = new CoordinatesWindow();
         coordinatesWindow.setLocation(10, 10);
@@ -215,14 +242,15 @@ public class MainApplicationFrame extends JFrame
             this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         });
         addMenuItem(fileMenu, "Добавить окна", (event) -> {
+            RobotModel robotModel = new RobotModel();
             CoordinatesWindow coordinatesWindow = createCoordinatesWindow();
+            robotModel.addObserver(coordinatesWindow);
             addWindow(coordinatesWindow);
 
             LogWindow logWindow = createLogWindow();
             addWindow(logWindow);
 
-            GameWindow gameWindow = new GameWindow();
-            gameWindow.setSize(400,  400);
+            GameWindow gameWindow = createGameWindow(robotModel);
             addWindow(gameWindow);
         });
 
