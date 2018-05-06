@@ -1,10 +1,7 @@
 package gui;
 
-import java.awt.Color;
-import java.awt.EventQueue;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.Point;
+import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
@@ -13,7 +10,7 @@ import java.util.Observer;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import javax.swing.JPanel;
+import javax.swing.*;
 
 public class GameVisualizer extends JPanel
 {
@@ -33,7 +30,10 @@ public class GameVisualizer extends JPanel
             @Override
             public void mouseClicked(MouseEvent e)
             {
-                robotModel.setTargetPosition(e.getPoint());
+                if (SwingUtilities.isLeftMouseButton(e))
+                    robotModel.setTargetPosition(e.getPoint());
+                else if (SwingUtilities.isRightMouseButton(e))
+                    robotModel.addObstacle(e.getPoint());
                 repaint();
             }
         });
@@ -57,6 +57,7 @@ public class GameVisualizer extends JPanel
         Graphics2D g2d = (Graphics2D)g; 
         drawRobot(g2d, round(robotModel.getX()), round(robotModel.getY()), robotModel.getDirection());
         drawTarget(g2d, robotModel.getTargetX(), robotModel.getTargetY());
+        drawObstracle(g2d);
     }
     
     private static void fillOval(Graphics g, int centerX, int centerY, int diam1, int diam2)
@@ -68,7 +69,7 @@ public class GameVisualizer extends JPanel
     {
         g.drawOval(centerX - diam1 / 2, centerY - diam2 / 2, diam1, diam2);
     }
-    
+
     private void drawRobot(Graphics2D g, int x, int y, double direction)
     {
         int robotCenterX = round(robotModel.getX());
@@ -93,5 +94,15 @@ public class GameVisualizer extends JPanel
         fillOval(g, x, y, 5, 5);
         g.setColor(Color.BLACK);
         drawOval(g, x, y, 5, 5);
+    }
+
+    private void drawObstracle(Graphics2D g){
+        for (Obstacle obstacle : robotModel.getObstacles()) {
+            Rectangle rect = obstacle.getRectangle();
+            g.setColor(Color.ORANGE);
+            g.fillRect(rect.x, rect.y, rect.width, rect.height);
+            g.setColor(Color.BLACK);
+            g.drawRect(rect.x, rect.y, rect.width, rect.height);
+        }
     }
 }

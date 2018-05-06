@@ -56,9 +56,13 @@ public class MainApplicationFrame extends JFrame
                     try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("out.txt"))) {
                         Component[] components = getContentPane().getComponents();
                         for (Component comp: components) {
-                            outputWriter.write(String.format("%s:%d %d %d %d\r\n",
-                                    comp.getAccessibleContext().getAccessibleName(),
-                                    comp.getX(), comp.getY(), comp.getWidth(), comp.getHeight()));
+                            if (comp.getAccessibleContext().getAccessibleName() != "Игровое поле") {
+                                outputWriter.write(String.format("%s:%d %d %d %d\r\n",
+                                        comp.getAccessibleContext().getAccessibleName(),
+                                        comp.getX(), comp.getY(), comp.getWidth(), comp.getHeight()));
+                            } else{
+
+                            }
                         }
                         outputWriter.flush();
                         outputWriter.close();
@@ -66,6 +70,14 @@ public class MainApplicationFrame extends JFrame
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
+
+                    /*try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("components.txt"))) {
+                        for (Obstacle obstacle : robotModel.getObstacles()) {
+
+                        }
+                    } catch (IOException ex) {
+                        ex.printStackTrace();
+                    }*/
                 }
 
             }

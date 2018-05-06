@@ -1,11 +1,11 @@
 package gui;
 
 import java.awt.*;
-import java.util.Observable;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public class RobotModel extends Observable {
+
+    private ArrayList<Obstacle> obstacles;
 
     private final Timer m_timer = initTimer();
 
@@ -39,6 +39,10 @@ public class RobotModel extends Observable {
         return m_targetPositionY;
     }
 
+    public ArrayList<Obstacle> getObstacles() {
+        return obstacles;
+    }
+
     private static Timer initTimer()
     {
         Timer timer = new Timer("events generator", true);
@@ -62,6 +66,7 @@ public class RobotModel extends Observable {
                 tick();
             }
         }, 0, 10);
+        obstacles = new ArrayList<>();
     }
 
     protected void setTargetPosition(Point p)
@@ -94,8 +99,8 @@ public class RobotModel extends Observable {
             return;
         }
         double velocity = maxVelocity;
-        double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY, m_targetPositionX, m_targetPositionY);
-        double angularVelocity = 0;
+        //double angleToTarget = angleTo(m_robotPositionX, m_robotPositionY, m_targetPositionX, m_targetPositionY);
+        /*double angularVelocity = 0;
         if (angleToTarget > m_robotDirection)
         {
             angularVelocity = maxAngularVelocity;
@@ -103,10 +108,87 @@ public class RobotModel extends Observable {
         if (angleToTarget < m_robotDirection)
         {
             angularVelocity = -maxAngularVelocity;
-        }
+        }*/
 
-        moveRobot(velocity, angularVelocity, 10);
+        //moveRobot(velocity, angularVelocity, 10);
         setChanged();
+    }
+
+    public Map<Point, Point> findRoute(){
+
+        Set<Point> visited = new HashSet<>();
+        Queue<Point> queue = new LinkedList<>();
+        Map<Point, Point> father = new HashMap<>();
+
+        Point robot = new Point((int) m_robotPositionX, (int) m_robotPositionY);
+        Point target = new Point(m_targetPositionX, m_targetPositionY);
+        queue.add(robot);
+        visited.add(robot);
+        while (!queue.isEmpty()){
+            Point point = queue.peek();
+            if(point.equals(target)) break;
+            queue.poll();
+            Set<Point> incidentPoints = incidentPoints(point);
+            for (Point w: incidentPoints){
+                if (!visited.contains(w) && !collidedWithAnObstacle(w)) {
+                    visited.add(w);
+                    queue.add(w);
+                    father.put(w, point);
+                }
+            }
+        }
+        return father;
+    }
+
+    public Set<Point> incidentPoints(Point p){
+        Integer X[] = {0,1,1,1,0,-1,-1,-1};
+        Integer Y[] = {1,1,0,-1,-1,-1,0,1};
+        Set<Point> incidentPoints = new HashSet<>();
+
+        for(int i = 0; i < 8; i++)
+            //if (getX() + X[i] >= 0 && getX() + X[i] <= 7 && getY() + Y[i] >= 0 && getY() + Y[i] <= 7)
+                incidentPoints.add(new Point((int)(p.getX() + X[i]), (int)(p.getY() + Y[i])));
+
+        return incidentPoints;
+    }
+
+    public boolean collidedWithAnObstacle(Point p){
+        boolean underAttack = false;
+        for(Obstacle obs: obstacles) {
+            //левая вертикаль
+            double discriminant1 = discriminant(p.getY(), p.getX(), obs.getX(), 30, 10);
+            double lv_y1 = equationRoot(p.getY(), 10, Math.sqrt(discriminant1));
+            double lv_y2 = equationRoot(p.getY(), 10, -Math.sqrt(discriminant1));
+            //правая вертикаль
+            double discriminant2 = discriminant(p.getY(), p.getX(), obs.getX() + obs.getWidth(), 30, 10);
+            double rv_y1 = equationRoot(p.getY(), 10, Math.sqrt(discriminant2));
+            double rv_y2 = equationRoot(p.getY(), 10, -Math.sqrt(discriminant2));
+            //верхняя горизонталь
+            double discriminant3 = discriminant(p.getX(), p.getY(), obs.getY(), 10, 30);
+            double tg_y1 = equationRoot(p.getX(), 30, Math.sqrt(discriminant3));
+            double tg_y2 = equationRoot(p.getX(), 30, -Math.sqrt(discriminant3));
+            //нижняя горизонталь
+            double discriminant4 = discriminant(p.getX(), p.getY(), obs.getY() + obs.getHeight(), 10, 30);
+            double lg_y1 = equationRoot(p.getX(), 30, Math.sqrt(discriminant4));
+            double lg_y2 = equationRoot(p.getX(), 30, -Math.sqrt(discriminant4));
+
+            if ((discriminant1 >= 0 && (obs.getY() <= lv_y1) && (lv_y1 <= obs.getY() + obs.getHeight()) && (obs.getY() <= lv_y2) && (lv_y2 <= obs.getY() + obs.getHeight())) &&
+                    (discriminant2 >= 0 && (obs.getY() <= rv_y1) && (rv_y1 <= obs.getY() + obs.getHeight()) && (obs.getY() <= rv_y2) && (rv_y2 <= obs.getY() + obs.getHeight())) &&
+                    (discriminant3 >= 0 && (obs.getX() <= tg_y1) && (tg_y1 <= obs.getX() + obs.getWidth()) && (obs.getX() <= tg_y2) && (tg_y2 <= obs.getX() + obs.getWidth())) &&
+                    (discriminant4 >= 0 && (obs.getX() <= lg_y1) && (lg_y1 <= obs.getX() + obs.getWidth()) && (obs.getX() <= lg_y2) && (lg_y2 <= obs.getX() + obs.getWidth())));
+                underAttack = true;
+        }
+        return underAttack;
+    }
+
+    public  double discriminant(double y0, double x0, double x1, int a, int b){
+        double discriminant =
+                Math.pow(-(2*y0)/Math.pow(b,2),2) - 4*1/Math.pow(b, 2)*(Math.pow(y0,2)/Math.pow(b,2) - Math.pow(x1-x0,2)/Math.pow(a,2) + 1);
+        return  discriminant;
+    }
+    public double equationRoot(double y0, int b, double discr){
+        double y = (2*y0/Math.pow(b, 2) + discr) / (2*(1/Math.pow(b, 2)));
+        return y;
     }
 
     private void moveRobot(double velocity, double angularVelocity, double duration)
@@ -153,5 +235,9 @@ public class RobotModel extends Observable {
             angle -= 2*Math.PI;
         }
         return angle;
+    }
+
+    public void addObstacle(Point p) {
+       obstacles.add(Obstacle.newObstacle(p.getLocation()));
     }
 }
