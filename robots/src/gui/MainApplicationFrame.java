@@ -8,6 +8,9 @@ import java.awt.event.WindowEvent;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.swing.*;
 
@@ -56,13 +59,10 @@ public class MainApplicationFrame extends JFrame
                     try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("out.txt"))) {
                         Component[] components = getContentPane().getComponents();
                         for (Component comp: components) {
-                            if (comp.getAccessibleContext().getAccessibleName() != "Игровое поле") {
-                                outputWriter.write(String.format("%s:%d %d %d %d\r\n",
-                                        comp.getAccessibleContext().getAccessibleName(),
-                                        comp.getX(), comp.getY(), comp.getWidth(), comp.getHeight()));
-                            } else{
-
-                            }
+                            outputWriter.write(String.format("%s:%d %d %d %d:%d\r\n",
+                                    comp.getAccessibleContext().getAccessibleName(),
+                                    comp.getX(), comp.getY(), comp.getWidth(), comp.getHeight(),
+                                    ((AssociatedFrame) comp).getRobotModel().hashCode()));
                         }
                         outputWriter.flush();
                         outputWriter.close();
@@ -70,14 +70,6 @@ public class MainApplicationFrame extends JFrame
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
-
-                    /*try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("components.txt"))) {
-                        for (Obstacle obstacle : robotModel.getObstacles()) {
-
-                        }
-                    } catch (IOException ex) {
-                        ex.printStackTrace();
-                    }*/
                 }
 
             }
@@ -88,51 +80,30 @@ public class MainApplicationFrame extends JFrame
                 try (BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\fyfcn\\Desktop\\Robots-master\\out.txt"))) {
                     String[] values;
                     String line;
-                    RobotModel robotModel = new RobotModel();
-                    boolean gameAttached = false, coordinatesAttached = false;
+                    Map<Integer, RobotModel> models = new HashMap<>();
                     while ((line = br.readLine()) != null) {
                         values = line.split(":");
-                        if ( values[0].compareTo("Протокол работы") == 0) {
-                            resizeWindow(createLogWindow(), values[1]);
-                        }
-                        else if( values[0].compareTo("Игровое поле") == 0){
-                            //если к игре не прикреплена модель, то прикрепляем и gameAttached меняем на true
-                            if (!gameAttached) {
-                                resizeWindow(createGameWindow(robotModel), values[1]);
-                                gameAttached = true;
-                            } else {
-                            //если gameAttached = true, то к какому-то окну с игрой модель уже прикреплена,
-                                // и мы создаём новую модель и присваиваем coordinatesAttached значени false
-                                robotModel = new RobotModel();
-                                resizeWindow(createGameWindow(robotModel), values[1]);
-                                coordinatesAttached = false;
-                            }
-                        }
-                        else {
-                            CoordinatesWindow coordinatesWindow = createCoordinatesWindow();
-                            //если окно с координатами на прикреплено к конкретному окну с игрой, то делаем это и меняем coordinatesAttached на true
-                            if (!coordinatesAttached) {
-                                robotModel.addObserver(coordinatesWindow);
-                                resizeWindow(coordinatesWindow, values[1]);
-                                coordinatesAttached = true;
-                            } else if (gameAttached){
-                            //если gameAttached = true и coordinatesAttached = true, то создаем новую модель, прикрепляем её и gameAttached = false
-                                robotModel = new RobotModel();
-                                robotModel.addObserver(coordinatesWindow);
-                                resizeWindow(coordinatesWindow, values[1]);
-                                gameAttached = false;
-                            }
+                        int id = Integer.parseInt(values[2]);
+                        models.putIfAbsent(id, new RobotModel());
+                        RobotModel robotModel = models.get(id);
+                        if (values[0].compareTo("Протокол работы") == 0) {
+                            resizeWindow(createLogWindow(robotModel), values[1]);
+                        } else if (values[0].compareTo("Игровое поле") == 0) {
+                            resizeWindow(createGameWindow(robotModel), values[1]);
+                        } else {
+                            CoordinatesWindow coordinatesWindow = createCoordinatesWindow(robotModel);
+                            resizeWindow(coordinatesWindow, values[1]);
                         }
                     }
                 }
                 //если файл не найден, то создаём три стандартных окна
                 catch (FileNotFoundException ex) {
                     RobotModel robotModel = new RobotModel();
-                    CoordinatesWindow coordinatesWindow = createCoordinatesWindow();
+                    CoordinatesWindow coordinatesWindow = createCoordinatesWindow(robotModel);
                     robotModel.addObserver(coordinatesWindow);
                     addWindow(coordinatesWindow);
 
-                    LogWindow logWindow = createLogWindow();
+                    LogWindow logWindow = createLogWindow(robotModel);
                     addWindow(logWindow);
 
                     GameWindow gameWindow = createGameWindow(robotModel);
@@ -156,9 +127,9 @@ public class MainApplicationFrame extends JFrame
     }
 
     //создаём окно с логом
-    protected LogWindow createLogWindow()
+    protected LogWindow createLogWindow(RobotModel robotModel)
     {
-        LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource());
+        LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource(), robotModel);
         logWindow.setLocation(10,10);
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
@@ -175,8 +146,8 @@ public class MainApplicationFrame extends JFrame
     }
 
     //создаём окно с координатами
-    protected  CoordinatesWindow createCoordinatesWindow() {
-        CoordinatesWindow coordinatesWindow = new CoordinatesWindow();
+    protected  CoordinatesWindow createCoordinatesWindow(RobotModel robotModel) {
+        CoordinatesWindow coordinatesWindow = new CoordinatesWindow(robotModel);
         coordinatesWindow.setLocation(10, 10);
         coordinatesWindow.setSize(400, 700);
         setMinimumSize(coordinatesWindow.getSize());
@@ -255,11 +226,11 @@ public class MainApplicationFrame extends JFrame
         });
         addMenuItem(fileMenu, "Добавить окна", (event) -> {
             RobotModel robotModel = new RobotModel();
-            CoordinatesWindow coordinatesWindow = createCoordinatesWindow();
+            CoordinatesWindow coordinatesWindow = createCoordinatesWindow(robotModel);
             robotModel.addObserver(coordinatesWindow);
             addWindow(coordinatesWindow);
 
-            LogWindow logWindow = createLogWindow();
+            LogWindow logWindow = createLogWindow(robotModel);
             addWindow(logWindow);
 
             GameWindow gameWindow = createGameWindow(robotModel);

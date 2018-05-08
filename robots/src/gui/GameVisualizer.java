@@ -34,6 +34,8 @@ public class GameVisualizer extends JPanel
                     robotModel.setTargetPosition(e.getPoint());
                 else if (SwingUtilities.isRightMouseButton(e))
                     robotModel.addObstacle(e.getPoint());
+                else if (SwingUtilities.isMiddleMouseButton(e))
+                    robotModel.removeObstacle(e.getPoint());
                 repaint();
             }
         });
@@ -81,9 +83,12 @@ public class GameVisualizer extends JPanel
         g.setColor(Color.BLACK);
         drawOval(g, robotCenterX, robotCenterY, 30, 10);
         g.setColor(Color.WHITE);
-        fillOval(g, robotCenterX  + 10, robotCenterY, 5, 5);
+        fillOval(g, robotCenterX, robotCenterY - 5, 10, 10);
         g.setColor(Color.BLACK);
-        drawOval(g, robotCenterX  + 10, robotCenterY, 5, 5);
+        drawOval(g, robotCenterX , robotCenterY - 5, 10, 10);
+        g.drawLine(robotCenterX, robotCenterY + 5, robotCenterX, robotCenterY + 10);
+        g.drawLine(robotCenterX - 5, robotCenterY + 5, robotCenterX - 10, robotCenterY + 10);
+        g.drawLine(robotCenterX + 5, robotCenterY + 5, robotCenterX + 10, robotCenterY + 10);
     }
     
     private void drawTarget(Graphics2D g, int x, int y)
@@ -98,7 +103,7 @@ public class GameVisualizer extends JPanel
 
     private void drawObstracle(Graphics2D g){
         for (Obstacle obstacle : robotModel.getObstacles()) {
-            Rectangle rect = obstacle.getRectangle();
+            Rectangle rect = obstacle;
             g.setColor(Color.ORANGE);
             g.fillRect(rect.x, rect.y, rect.width, rect.height);
             g.setColor(Color.BLACK);

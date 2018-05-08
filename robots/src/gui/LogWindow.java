@@ -11,14 +11,14 @@ import log.LogChangeListener;
 import log.LogEntry;
 import log.LogWindowSource;
 
-public class LogWindow extends JInternalFrame implements LogChangeListener
+public class LogWindow extends AssociatedFrame implements LogChangeListener
 {
     private LogWindowSource m_logSource;
     private TextArea m_logContent;
 
-    public LogWindow(LogWindowSource logSource) 
+    public LogWindow(LogWindowSource logSource, RobotModel robotModel)
     {
-        super("Протокол работы", true, true, true, true);
+        super(robotModel, "Протокол работы", true, true, true, true);
         m_logSource = logSource;
         m_logSource.registerListener(this);
         m_logContent = new TextArea("");
