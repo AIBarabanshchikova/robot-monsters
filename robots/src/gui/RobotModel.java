@@ -45,6 +45,22 @@ public class RobotModel extends Observable {
         return obstacles;
     }
 
+    public void setX(int m_robotPositionX) {
+        this.m_robotPositionX = m_robotPositionX;
+    }
+
+    public void setY(int m_robotPositionY) {
+        this.m_robotPositionY = m_robotPositionY;
+    }
+
+    public void setTargetX(int m_targetPositionX) {
+        this.m_targetPositionX = m_targetPositionX;
+    }
+
+    public void setTargetY(int m_targetPositionY) {
+        this.m_targetPositionY = m_targetPositionY;
+    }
+
     private static Timer initTimer()
     {
         Timer timer = new Timer("events generator", true);

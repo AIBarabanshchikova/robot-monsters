@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 
 import javax.swing.*;
@@ -57,13 +58,27 @@ public class MainApplicationFrame extends JFrame
                 int result = JOptionPane.showConfirmDialog(desktopPane, "Вы уверены, что хотите выйти?", "Подтверждение", JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
                     try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("out.txt"))) {
+                        HashSet<RobotModel> models = new HashSet<>();
                         Component[] components = getContentPane().getComponents();
                         for (Component comp: components) {
-                            outputWriter.write(String.format("%s:%d %d %d %d:%d\r\n",
-                                    comp.getAccessibleContext().getAccessibleName(),
-                                    comp.getX(), comp.getY(), comp.getWidth(), comp.getHeight(),
-                                    ((AssociatedFrame) comp).getRobotModel().hashCode()));
+                            AssociatedFrame frame = (AssociatedFrame) comp;
+                            outputWriter.write(String.format("WIN %s %d %d %d %d %d\r\n",
+                                    frame.getFrameType(),
+                                    frame.getX(), frame.getY(), frame.getWidth(), frame.getHeight(),
+                                    frame.getRobotModel().hashCode()));
+                            models.add(frame.getRobotModel());
                         }
+                        for (RobotModel model: models) {
+                            outputWriter.write(String.format("MODEL %d %d %d\r\n",
+                                    model.hashCode(),
+                                    (int)model.getX(), (int)model.getY()));
+                        }
+                        for (RobotModel model: models)
+                            for (Obstacle obs: model.getObstacles()){
+                                outputWriter.write(String.format("OBS %d %d %d\r\n",
+                                        model.hashCode(),
+                                        obs.x, obs.y));
+                            }
                         outputWriter.flush();
                         outputWriter.close();
                         System.exit(0);
@@ -82,17 +97,41 @@ public class MainApplicationFrame extends JFrame
                     String line;
                     Map<Integer, RobotModel> models = new HashMap<>();
                     while ((line = br.readLine()) != null) {
-                        values = line.split(":");
-                        int id = Integer.parseInt(values[2]);
-                        models.putIfAbsent(id, new RobotModel());
-                        RobotModel robotModel = models.get(id);
-                        if (values[0].compareTo("Протокол работы") == 0) {
-                            resizeWindow(createLogWindow(robotModel), values[1]);
-                        } else if (values[0].compareTo("Игровое поле") == 0) {
-                            resizeWindow(createGameWindow(robotModel), values[1]);
-                        } else {
-                            CoordinatesWindow coordinatesWindow = createCoordinatesWindow(robotModel);
-                            resizeWindow(coordinatesWindow, values[1]);
+                        int id;
+                        RobotModel robotModel;
+                        values = line.split(" ");
+                        if (values[0].equals("WIN")) {
+                            id = Integer.parseInt(values[6]);
+                            models.putIfAbsent(id, new RobotModel());
+                            robotModel = models.get(id);
+                            int x = Integer.parseInt(values[2]);
+                            int y = Integer.parseInt(values[3]);
+                            int width = Integer.parseInt(values[4]);
+                            int height = Integer.parseInt(values[5]);
+                            if (values[1].equals("LOG")) {
+                                resizeWindow(createLogWindow(robotModel), x, y, width, height);
+                            } else if (values[1].equals("GAME")) {
+                                resizeWindow(createGameWindow(robotModel), x, y, width, height);
+                            } else {
+                                CoordinatesWindow coordinatesWindow = createCoordinatesWindow(robotModel);
+                                resizeWindow(coordinatesWindow, x, y, width, height);
+                            }
+                        }
+                        else if (values[0].equals("MODEL")) {
+                            id = Integer.parseInt(values[1]);
+                            int x = Integer.parseInt(values[2]);
+                            int y = Integer.parseInt(values[3]);
+                            robotModel = models.get(id);
+                            robotModel.setX(x);
+                            robotModel.setY(y);
+                            robotModel.setTargetX(x);
+                            robotModel.setTargetY(y);
+                        }
+                        else {
+                            id = Integer.parseInt(values[1]);
+                            robotModel = models.get(id);
+                            Point p = new Point(Integer.parseInt(values[2]), Integer.parseInt(values[3]));
+                            robotModel.addObstacle(p);
                         }
                     }
                 }
@@ -117,11 +156,9 @@ public class MainApplicationFrame extends JFrame
     }
 
     //метод, который переопределяет размеры окон
-    protected  JInternalFrame resizeWindow(JInternalFrame frame, String line) {
-        String[] values;
-        values = line.split(" ");
-        frame.setLocation(Integer.parseInt(values[0]), Integer.parseInt(values[1]));
-        frame.setSize(Integer.parseInt(values[2]), Integer.parseInt(values[3]));
+    protected  JInternalFrame resizeWindow(JInternalFrame frame, int x, int y, int width, int height) {
+        frame.setLocation(x, y);
+        frame.setSize(width, height);
         addWindow(frame);
         return frame;
     }

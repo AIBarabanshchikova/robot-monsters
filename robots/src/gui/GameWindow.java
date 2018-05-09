@@ -11,7 +11,7 @@ public class GameWindow extends AssociatedFrame
     private final GameVisualizer m_visualizer;
     public GameWindow(RobotModel robotModel)
     {
-        super(robotModel, "Игровое поле", true, true, true, true);
+        super(robotModel, "GAME", true, true, true, true);
         m_visualizer = new GameVisualizer(robotModel);
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_visualizer, BorderLayout.CENTER);

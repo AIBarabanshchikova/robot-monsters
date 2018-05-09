@@ -18,7 +18,7 @@ public class LogWindow extends AssociatedFrame implements LogChangeListener
 
     public LogWindow(LogWindowSource logSource, RobotModel robotModel)
     {
-        super(robotModel, "Протокол работы", true, true, true, true);
+        super(robotModel, "LOG", true, true, true, true);
         m_logSource = logSource;
         m_logSource.registerListener(this);
         m_logContent = new TextArea("");

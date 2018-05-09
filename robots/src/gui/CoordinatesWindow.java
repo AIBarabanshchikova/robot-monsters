@@ -9,7 +9,7 @@ public class CoordinatesWindow extends AssociatedFrame implements Observer {
     private TextField m_coordinatesContent;
 
     public CoordinatesWindow(RobotModel robotModel){
-        super(robotModel, "Координаты робота", true, true, true, true);
+        super(robotModel, "COORDINATE", true, true, true, true);
         m_coordinatesContent = new TextField("");
         m_coordinatesContent.setSize(200, 500);
 
