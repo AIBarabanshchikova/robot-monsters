@@ -1,5 +1,7 @@
 package gui;
 
+import log.Logger;
+
 import java.awt.*;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -95,6 +97,7 @@ public class RobotModel extends Observable {
             m_targetPositionY = p.y;
             recalculateRoute();
         }
+        else Logger.debug("Цель недостижима!");
     }
 
     private static double distance(double x1, double y1, double x2, double y2)
@@ -192,8 +195,16 @@ public class RobotModel extends Observable {
     }
 
     public void addObstacle(Point p) {
-       obstacles.add(new Obstacle(p.getLocation()));
-       recalculateRoute();
+        Obstacle obs = new Obstacle(p.getLocation());
+        boolean enoughSpace = obstacles.stream().allMatch(o -> o.distance(obs) > 45);
+        if (!obs.contains(new Point(m_targetPositionX, m_targetPositionY)) && enoughSpace) {
+            obstacles.add(new Obstacle(p.getLocation()));
+            recalculateRoute();
+        }
+        else if (!enoughSpace)
+            Logger.debug("Препятствия слишком близки друг к другу!");
+        else
+            Logger.debug("Нельзя ставить препятствия на цель!");
     }
 
     public void removeObstacle(Point p) {
