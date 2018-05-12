@@ -57,7 +57,7 @@ public class MainApplicationFrame extends JFrame
                 UIManager.put("OptionPane.noButtonText"    , "Нет"   );
                 int result = JOptionPane.showConfirmDialog(desktopPane, "Вы уверены, что хотите выйти?", "Подтверждение", JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
-                    try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("out.txt"))) {
+                    /*try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("out.txt"))) {
                         HashSet<RobotModel> models = new HashSet<>();
                         Component[] components = getContentPane().getComponents();
                         for (Component comp: components) {
@@ -71,7 +71,7 @@ public class MainApplicationFrame extends JFrame
                         for (RobotModel model: models) {
                             outputWriter.write(String.format("MODEL %d %d %d\r\n",
                                     model.hashCode(),
-                                    (int)model.getX(), (int)model.getY()));
+                                    model.getPosition().x, model.getPosition().y));
                         }
                         for (RobotModel model: models)
                             for (Obstacle obs: model.getObstacles()){
@@ -84,7 +84,8 @@ public class MainApplicationFrame extends JFrame
                         System.exit(0);
                     } catch (IOException ex) {
                         ex.printStackTrace();
-                    }
+                    }*/
+                    System.exit(0);
                 }
 
             }
@@ -92,7 +93,7 @@ public class MainApplicationFrame extends JFrame
             //метод восстановления из файла положения окошек
             @Override
             public void windowOpened(WindowEvent e) {
-                try (BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\fyfcn\\Desktop\\Robots-master\\out.txt"))) {
+                /*try (BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\fyfcn\\Desktop\\Robots-master\\out.txt"))) {
                     String[] values;
                     String line;
                     Map<Integer, RobotModel> models = new HashMap<>();
@@ -150,7 +151,7 @@ public class MainApplicationFrame extends JFrame
                 }
                 catch (IOException ex) {
                     ex.printStackTrace();
-                }
+                }*/
             }
         });
     }
@@ -164,9 +165,9 @@ public class MainApplicationFrame extends JFrame
     }
 
     //создаём окно с логом
-    protected LogWindow createLogWindow(RobotModel robotModel)
+    protected LogWindow createLogWindow(GameField gameField)
     {
-        LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource(), robotModel);
+        LogWindow logWindow = new LogWindow(Logger.getDefaultLogSource(), gameField);
         logWindow.setLocation(10,10);
         logWindow.setSize(300, 800);
         setMinimumSize(logWindow.getSize());
@@ -176,15 +177,15 @@ public class MainApplicationFrame extends JFrame
     }
 
     //создаём окно с игрой
-    protected  GameWindow createGameWindow(RobotModel robotModel){
-        GameWindow gameWindow = new GameWindow(robotModel);
+    protected  GameWindow createGameWindow(GameField gameField){
+        GameWindow gameWindow = new GameWindow(gameField);
         gameWindow.setSize(400,  400);
         return  gameWindow;
     }
 
     //создаём окно с координатами
-    protected  CoordinatesWindow createCoordinatesWindow(RobotModel robotModel) {
-        CoordinatesWindow coordinatesWindow = new CoordinatesWindow(robotModel);
+    protected  CoordinatesWindow createCoordinatesWindow(GameField gameField) {
+        CoordinatesWindow coordinatesWindow = new CoordinatesWindow(gameField);
         coordinatesWindow.setLocation(10, 10);
         coordinatesWindow.setSize(400, 700);
         setMinimumSize(coordinatesWindow.getSize());
@@ -262,15 +263,15 @@ public class MainApplicationFrame extends JFrame
             this.dispatchEvent(new WindowEvent(this, WindowEvent.WINDOW_CLOSING));
         });
         addMenuItem(fileMenu, "Добавить окна", (event) -> {
-            RobotModel robotModel = new RobotModel();
-            CoordinatesWindow coordinatesWindow = createCoordinatesWindow(robotModel);
-            robotModel.addObserver(coordinatesWindow);
+            GameField gameField = new GameField();
+            CoordinatesWindow coordinatesWindow = createCoordinatesWindow(gameField);
+            gameField.addObserver(coordinatesWindow);
             addWindow(coordinatesWindow);
 
-            LogWindow logWindow = createLogWindow(robotModel);
+            LogWindow logWindow = createLogWindow(gameField);
             addWindow(logWindow);
 
-            GameWindow gameWindow = createGameWindow(robotModel);
+            GameWindow gameWindow = createGameWindow(gameField);
             addWindow(gameWindow);
         });
 

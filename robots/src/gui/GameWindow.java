@@ -9,10 +9,10 @@ import javax.swing.JPanel;
 public class GameWindow extends AssociatedFrame
 {
     private final GameVisualizer m_visualizer;
-    public GameWindow(RobotModel robotModel)
+    public GameWindow(GameField gameField)
     {
-        super(robotModel, "GAME", true, true, true, true);
-        m_visualizer = new GameVisualizer(robotModel);
+        super(gameField, "GAME", true, true, true, true);
+        m_visualizer = new GameVisualizer(gameField);
         JPanel panel = new JPanel(new BorderLayout());
         panel.add(m_visualizer, BorderLayout.CENTER);
         getContentPane().add(panel);

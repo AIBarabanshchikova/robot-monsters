@@ -4,17 +4,17 @@ import javax.swing.*;
 
 public class AssociatedFrame extends JInternalFrame{
 
-    private RobotModel robotModel;
+    private GameField gameField;
     private String frameType;
 
-    public AssociatedFrame (RobotModel robotModel, String id, boolean resizable, boolean closable, boolean maximizable, boolean iconifiable){
+    public AssociatedFrame (GameField gameField, String id, boolean resizable, boolean closable, boolean maximizable, boolean iconifiable){
         super(getTitleById(id), resizable, closable, maximizable, iconifiable);
         this.frameType = id;
-        this.robotModel = robotModel;
+        this.gameField = gameField;
     }
 
-    public RobotModel getRobotModel() {
-        return robotModel;
+    public GameField getGameField() {
+        return gameField;
     }
 
     public String getFrameType() {
