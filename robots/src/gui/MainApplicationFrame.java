@@ -129,7 +129,8 @@ public class MainApplicationFrame extends JFrame
                             int x = Integer.parseInt(values[2]);
                             int y = Integer.parseInt(values[3]);
                             gameField = fields.get(id);
-                            RobotModel robotModel = new RobotModel(new RobotBFSAlgo());
+                            IRobotAlgorithm algo = (IRobotAlgorithm) Class.forName(values[4]).newInstance();
+                            RobotModel robotModel = new RobotModel(algo);
                             robotModel.setPosition(new Point(x, y));
                             gameField.addRobot(robotModel);
                         }
@@ -156,6 +157,12 @@ public class MainApplicationFrame extends JFrame
                 }
                 catch (IOException ex) {
                     ex.printStackTrace();
+                } catch (IllegalAccessException e1) {
+                    e1.printStackTrace();
+                } catch (InstantiationException e1) {
+                    e1.printStackTrace();
+                } catch (ClassNotFoundException e1) {
+                    e1.printStackTrace();
                 }
             }
         });
