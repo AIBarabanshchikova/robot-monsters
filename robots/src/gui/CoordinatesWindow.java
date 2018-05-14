@@ -6,12 +6,12 @@ import java.util.Observable;
 import java.util.Observer;
 
 public class CoordinatesWindow extends AssociatedFrame implements Observer {
-    private TextField m_coordinatesContent;
+    private TextArea m_coordinatesContent;
     private GameField gameField;
 
     public CoordinatesWindow(GameField gameField){
         super(gameField, "COORDINATE", true, true, true, true);
-        m_coordinatesContent = new TextField("");
+        m_coordinatesContent = new TextArea("");
         m_coordinatesContent.setSize(200, 500);
         this.gameField = gameField;
 

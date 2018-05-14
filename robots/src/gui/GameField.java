@@ -15,7 +15,6 @@ public class GameField extends Observable {
     public GameField() {
         obstacles = new ArrayList<>();
         robotModels = new ArrayList<>();
-        robotModels.add(new RobotModel(new RobotBFSAlgo()));
         target = new Point(150, 100);
         recalculateAllRoutes();
         Timer timer = new Timer("events generator", true);
@@ -57,8 +56,9 @@ public class GameField extends Observable {
     }
 
     private void recalculateAllRoutes() {
-        for (RobotModel model : robotModels)
-            model.recalculateRoute(target, obstacles);
+        //for (RobotModel model : robotModels)
+          //  model.recalculateRoute(target, obstacles);
+        robotModels.parallelStream().forEach(m -> m.recalculateRoute(target, obstacles));
     }
 
     //добавляем препятствие
@@ -78,5 +78,9 @@ public class GameField extends Observable {
     //удаляем препятствие
     public void removeObstacle(Point p) {
         obstacles = (ArrayList<Obstacle>) obstacles.stream().filter(e -> !e.contains(p)).collect(Collectors.toList());
+    }
+
+    public void addRobot(RobotModel robotModel){
+        robotModels.add(robotModel);
     }
 }

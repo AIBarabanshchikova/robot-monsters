@@ -29,6 +29,11 @@ public class RobotBFSAlgo implements IRobotAlgorithm {
         return  restoreRoute(father, start, end);
     }
 
+    @Override
+    public String getName() {
+        return this.getClass().getName();
+    }
+
     public Set<Point> incidentPoints(Point p){
         Integer X[] = {0,1,1,1,0,-1,-1,-1};
         Integer Y[] = {1,1,0,-1,-1,-1,0,1};

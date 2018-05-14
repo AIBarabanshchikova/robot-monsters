@@ -38,14 +38,6 @@ public class MainApplicationFrame extends JFrame
 
         setContentPane(desktopPane);
 
-
-/*        LogWindow logWindow = createLogWindow();
-        addWindow(logWindow);
-
-        GameWindow gameWindow = new GameWindow();
-        gameWindow.setSize(400,  400);
-        addWindow(gameWindow);*/
-
         setJMenuBar(generateMenuBar());
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 
@@ -57,26 +49,33 @@ public class MainApplicationFrame extends JFrame
                 UIManager.put("OptionPane.noButtonText"    , "Нет"   );
                 int result = JOptionPane.showConfirmDialog(desktopPane, "Вы уверены, что хотите выйти?", "Подтверждение", JOptionPane.YES_NO_OPTION);
                 if (result == JOptionPane.YES_OPTION) {
-                    /*try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("out.txt"))) {
-                        HashSet<RobotModel> models = new HashSet<>();
+                    try (BufferedWriter outputWriter = Files.newBufferedWriter(Paths.get("out.txt"))) {
+                        HashSet<GameField> fields = new HashSet<>();
                         Component[] components = getContentPane().getComponents();
                         for (Component comp: components) {
                             AssociatedFrame frame = (AssociatedFrame) comp;
                             outputWriter.write(String.format("WIN %s %d %d %d %d %d\r\n",
                                     frame.getFrameType(),
                                     frame.getX(), frame.getY(), frame.getWidth(), frame.getHeight(),
-                                    frame.getRobotModel().hashCode()));
-                            models.add(frame.getRobotModel());
+                                    frame.getGameField().hashCode()));
+                            fields.add(frame.getGameField());
                         }
-                        for (RobotModel model: models) {
-                            outputWriter.write(String.format("MODEL %d %d %d\r\n",
-                                    model.hashCode(),
-                                    model.getPosition().x, model.getPosition().y));
+                        for (GameField field: fields) {
+                                outputWriter.write(String.format("FIELD %d %d %d\r\n",
+                                        field.hashCode(),
+                                        field.getTarget().x, field.getTarget().y));
                         }
-                        for (RobotModel model: models)
-                            for (Obstacle obs: model.getObstacles()){
+                        for (GameField field: fields)
+                            for (RobotModel model: field.getModels()) {
+                                outputWriter.write(String.format("MODEL %d %d %d %s\r\n",
+                                        field.hashCode(),
+                                        model.getPosition().x, model.getPosition().y,
+                                        model.getAlgo()));
+                            }
+                        for (GameField field: fields)
+                            for (Obstacle obs: field.getObstacles()){
                                 outputWriter.write(String.format("OBS %d %d %d\r\n",
-                                        model.hashCode(),
+                                        field.hashCode(),
                                         obs.x, obs.y));
                             }
                         outputWriter.flush();
@@ -84,7 +83,7 @@ public class MainApplicationFrame extends JFrame
                         System.exit(0);
                     } catch (IOException ex) {
                         ex.printStackTrace();
-                    }*/
+                    }
                     System.exit(0);
                 }
 
@@ -93,65 +92,71 @@ public class MainApplicationFrame extends JFrame
             //метод восстановления из файла положения окошек
             @Override
             public void windowOpened(WindowEvent e) {
-                /*try (BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\fyfcn\\Desktop\\Robots-master\\out.txt"))) {
+                try (BufferedReader br = new BufferedReader(new FileReader("C:\\Users\\fyfcn\\Desktop\\Robots-master\\out.txt"))) {
                     String[] values;
                     String line;
-                    Map<Integer, RobotModel> models = new HashMap<>();
+                    Map<Integer, GameField> fields = new HashMap<>();
                     while ((line = br.readLine()) != null) {
                         int id;
-                        RobotModel robotModel;
+                        GameField gameField;
                         values = line.split(" ");
                         if (values[0].equals("WIN")) {
                             id = Integer.parseInt(values[6]);
-                            models.putIfAbsent(id, new RobotModel());
-                            robotModel = models.get(id);
+                            fields.putIfAbsent(id, new GameField());
+                            gameField = fields.get(id);
                             int x = Integer.parseInt(values[2]);
                             int y = Integer.parseInt(values[3]);
                             int width = Integer.parseInt(values[4]);
                             int height = Integer.parseInt(values[5]);
                             if (values[1].equals("LOG")) {
-                                resizeWindow(createLogWindow(robotModel), x, y, width, height);
+                                resizeWindow(createLogWindow(gameField), x, y, width, height);
                             } else if (values[1].equals("GAME")) {
-                                resizeWindow(createGameWindow(robotModel), x, y, width, height);
+                                resizeWindow(createGameWindow(gameField), x, y, width, height);
                             } else {
-                                CoordinatesWindow coordinatesWindow = createCoordinatesWindow(robotModel);
+                                CoordinatesWindow coordinatesWindow = createCoordinatesWindow(gameField);
                                 resizeWindow(coordinatesWindow, x, y, width, height);
                             }
+                        }
+                        else if (values[0].equals("FIELD")) {
+                            id = Integer.parseInt(values[1]);
+                            int x = Integer.parseInt(values[2]);
+                            int y = Integer.parseInt(values[3]);
+                            gameField = fields.get(id);
+                            gameField.setTarget(new Point(x, y));
                         }
                         else if (values[0].equals("MODEL")) {
                             id = Integer.parseInt(values[1]);
                             int x = Integer.parseInt(values[2]);
                             int y = Integer.parseInt(values[3]);
-                            robotModel = models.get(id);
-                            robotModel.setX(x);
-                            robotModel.setY(y);
-                            robotModel.setTargetX(x);
-                            robotModel.setTargetY(y);
+                            gameField = fields.get(id);
+                            RobotModel robotModel = new RobotModel(new RobotBFSAlgo());
+                            robotModel.setPosition(new Point(x, y));
+                            gameField.addRobot(robotModel);
                         }
                         else {
                             id = Integer.parseInt(values[1]);
-                            robotModel = models.get(id);
+                            gameField = fields.get(id);
                             Point p = new Point(Integer.parseInt(values[2]), Integer.parseInt(values[3]));
-                            robotModel.addObstacle(p);
+                            gameField.addObstacle(p);
                         }
                     }
                 }
                 //если файл не найден, то создаём три стандартных окна
                 catch (FileNotFoundException ex) {
-                    RobotModel robotModel = new RobotModel();
-                    CoordinatesWindow coordinatesWindow = createCoordinatesWindow(robotModel);
-                    robotModel.addObserver(coordinatesWindow);
+                    GameField gameField = new GameField();
+                    CoordinatesWindow coordinatesWindow = createCoordinatesWindow(gameField);
+                    gameField.addObserver(coordinatesWindow);
                     addWindow(coordinatesWindow);
 
-                    LogWindow logWindow = createLogWindow(robotModel);
+                    LogWindow logWindow = createLogWindow(gameField);
                     addWindow(logWindow);
 
-                    GameWindow gameWindow = createGameWindow(robotModel);
+                    GameWindow gameWindow = createGameWindow(gameField);
                     addWindow(gameWindow);
                 }
                 catch (IOException ex) {
                     ex.printStackTrace();
-                }*/
+                }
             }
         });
     }
