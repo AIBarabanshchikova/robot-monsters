@@ -19,17 +19,26 @@ public class GameVisualizer extends JPanel
     public GameVisualizer(GameField gameField)
     {
         this.gameField = gameField;
+
         addMouseListener(new MouseAdapter()
         {
             @Override
             public void mouseClicked(MouseEvent e)
             {
-                if (SwingUtilities.isLeftMouseButton(e))
-                    gameField.setTarget(e.getPoint());
-                else if (SwingUtilities.isRightMouseButton(e))
-                    gameField.addObstacle(e.getPoint());
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    JPopupMenu menu = new JPopupMenu("Препятствия");
+                    JMenuItem item_1 = new JMenuItem("Добавить препятствие");
+                    JMenuItem item_2 = new JMenuItem("Удалить препятствие");
+                    item_1.addActionListener(l -> gameField.addObstacle(e.getPoint()));
+                    item_2.addActionListener(k -> gameField.removeObstacle(e.getPoint()));
+                    menu.add(item_1);
+                    menu.add(item_2);
+                    menu.show(e.getComponent(), e.getX(), e.getY());
+                }
                 else if (SwingUtilities.isMiddleMouseButton(e))
-                    gameField.removeObstacle(e.getPoint());
+                    gameField.setTarget(e.getPoint());
+                else if (SwingUtilities.isLeftMouseButton(e))
+                    gameField.removeRobot(e.getPoint());
                 repaint();
             }
         });

@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 public class GameField extends Observable {
 
-    private final ArrayList<RobotModel> robotModels;
+    private ArrayList<RobotModel> robotModels;
     private ArrayList<Obstacle> obstacles;
     private volatile Point target;
 
@@ -82,5 +82,10 @@ public class GameField extends Observable {
 
     public void addRobot(RobotModel robotModel){
         robotModels.add(robotModel);
+    }
+
+    public void removeRobot(Point p) {
+        robotModels = (ArrayList<RobotModel>) robotModels.stream().filter(e ->
+                !new Rectangle(e.getPosition().x - 15,e.getPosition().y - 10, 30, 20).contains(p)).collect(Collectors.toList());
     }
 }

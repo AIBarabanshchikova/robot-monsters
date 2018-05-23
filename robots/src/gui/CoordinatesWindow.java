@@ -25,7 +25,10 @@ public class CoordinatesWindow extends AssociatedFrame implements Observer {
     @Override
     public void update(Observable o, Object arg) {
         StringBuilder str = new StringBuilder();
-        gameField.getModels().stream().map(m -> String.format("%d x %d\r\n", m.getPosition().x, m.getPosition().y)).forEach(m -> str.append(m));
+        //gameField.getModels().stream().map(m -> String.format("%d x %d\r\n", m.getPosition().x, m.getPosition().y)).forEach(m -> str.append(m));
+        for(RobotModel model: gameField.getModels()){
+            str.append(String.format("%d x %d\r\n", model.getPosition().x, model.getPosition().y));
+        }
         m_coordinatesContent.setText(str.toString());
     }
 }
